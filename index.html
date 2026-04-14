@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sepsis Manager 2026 - NEWS2 & Antimicrobial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .tab-active { border-bottom: 3px solid #ef4444; color: #ef4444; }
+        .card { transition: all 0.2s ease; }
+        .input-select { @apply mt-1 block w-full p-2.5 border rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500; }
+        .step-badge { @apply w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mr-2; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-red-700 text-white p-6 shadow-lg sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold italic tracking-tight uppercase">Sepsis Manager v2026</h1>
+                <p class="text-sm opacity-90 font-medium">NEWS2 • ICU Criteria • Culture & Antimicrobial</p>
+            </div>
+            <div class="mt-4 md:mt-0 bg-red-800 px-4 py-2 rounded-full text-xs font-semibold animate-pulse border border-red-400">
+                ANTIMICROBIAL STEWARDSHIP
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto p-4 pb-24">
+        
+        <!-- Navigation Tabs -->
+        <nav class="flex space-x-2 border-b mb-6 overflow-x-auto no-scrollbar py-2">
+            <button onclick="switchTab('calc')" id="tab-calc" class="px-3 py-2 font-semibold tab-active whitespace-nowrap text-sm">Skrining NEWS2</button>
+            <button onclick="switchTab('bundle')" id="tab-bundle" class="px-3 py-2 font-semibold text-gray-500 whitespace-nowrap text-sm">Bundle 1 & 6 Jam</button>
+            <button onclick="switchTab('icu')" id="tab-icu" class="px-3 py-2 font-semibold text-gray-500 whitespace-nowrap text-sm">Kriteria ICU</button>
+            <button onclick="switchTab('antibiotic')" id="tab-antibiotic" class="px-3 py-2 font-semibold text-gray-500 whitespace-nowrap text-sm">Etiologi & Kultur</button>
+        </nav>
+
+        <!-- Tab: NEWS2 Calculator -->
+        <div id="content-calc" class="space-y-6">
+            <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 card">
+                <div class="flex items-center mb-6">
+                    <div class="bg-red-100 p-2 rounded-lg mr-3">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold">Skor NEWS2</h2>
+                        <p class="text-xs text-gray-500 italic uppercase">Skrining Awal Disfungsi Organ</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase">Laju Pernapasan</label>
+                        <select id="news-rr" class="input-select" onchange="calcNEWS2()">
+                            <option value="3">&le; 8</option><option value="1">9 – 11</option>
+                            <option value="0" selected>12 – 20</option><option value="2">21 – 24</option>
+                            <option value="3">&ge; 25</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase">Skala SpO2</label>
+                        <select id="news-spo2-scale" class="input-select" onchange="updateSpO2Options()">
+                            <option value="1">Skala 1 (Normal)</option>
+                            <option value="2">Skala 2 (PPOK/Hiperkapnia)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase">Saturasi O2 (%)</label>
+                        <select id="news-spo2-val" class="input-select" onchange="calcNEWS2()"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase">Suplemen Oksigen</label>
+                        <select id="news-ox" class="input-select" onchange="calcNEWS2()">
+                            <option value="0">Udara Bebas</option><option value="2">Oksigen Suplemen</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase">TD Sistolik (mmHg)</label>
+                        <select id="news-sbp" class="input-select" onchange="calcNEWS2()">
+                            <option value="3">&le; 90</option><option value="2">91 – 100</option>
+                            <option value="1">101 – 110</option><option value="0" selected>111 – 219</option>
+                            <option value="3">&ge; 220</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase">Denyut Nadi</label>
+                        <select id="news-hr" class="input-select" onchange="calcNEWS2()">
+                            <option value="3">&le; 40</option><option value="1">41 – 50</option>
+                            <option value="0" selected>51 – 90</option><option value="1">91 – 110</option>
+                            <option value="2">111 – 130</option><option value="3">&ge; 131</option>
+                        </select>
+                    </div>
+                    <!-- Added missing elements for news-cns and news-temp -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase">Kesadaran (ACVPU)</label>
+                        <select id="news-cns" class="input-select" onchange="calcNEWS2()">
+                            <option value="0" selected>Alert (Sadar)</option>
+                            <option value="3">Confusion (Bingung Baru)</option>
+                            <option value="3">Voice (Respon Suara)</option>
+                            <option value="3">Pain (Respon Nyeri)</option>
+                            <option value="3">Unresponsive (Tidak Sadar)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase">Suhu (&deg;C)</label>
+                        <select id="news-temp" class="input-select" onchange="calcNEWS2()">
+                            <option value="3">&le; 35.0</option>
+                            <option value="1">35.1 – 36.0</option>
+                            <option value="0" selected>36.1 – 38.0</option>
+                            <option value="1">38.1 – 39.0</option>
+                            <option value="2">&ge; 39.1</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="news-result-card" class="mt-6 p-6 rounded-2xl text-center border-2 transition-all">
+                    <div class="text-xs font-bold uppercase opacity-70">Skor NEWS2 Total</div>
+                    <div class="text-5xl font-black my-1" id="news-score-val">0</div>
+                    <div class="text-lg font-bold" id="news-risk-level">RISIKO RENDAH</div>
+                    <div class="mt-3 text-sm p-3 rounded-lg bg-white bg-opacity-20 border border-black border-opacity-10" id="news-action">
+                        Lanjutkan observasi rutin.
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Tab: Bundle 1 & 6 Jam -->
+        <div id="content-bundle" class="hidden space-y-6">
+            <!-- Hour 1 -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-blue-600">
+                <h3 class="text-lg font-bold mb-4 flex items-center text-blue-800">
+                    <span class="bg-blue-600 text-white step-badge">1h</span> Bundle Resusitasi Awal
+                </h3>
+                <div class="space-y-3">
+                    <label class="flex items-start p-3 bg-blue-50 rounded-lg cursor-pointer">
+                        <input type="checkbox" class="mt-1 w-5 h-5 accent-blue-600">
+                        <span class="ml-3 text-sm">Ukur Laktat & Kultur Darah (sebelum antibiotik).</span>
+                    </label>
+                    <label class="flex items-start p-3 bg-blue-50 rounded-lg cursor-pointer">
+                        <input type="checkbox" class="mt-1 w-5 h-5 accent-blue-600">
+                        <span class="ml-3 text-sm">Berikan Antibiotik Broad-Spectrum & Loading Cairan 30ml/kg.</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Hour 6 -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-orange-500">
+                <h3 class="text-lg font-bold mb-4 flex items-center text-orange-800">
+                    <span class="bg-orange-500 text-white step-badge">6h</span> Re-evaluasi 6 Jam
+                </h3>
+                <div class="space-y-4">
+                    <div class="p-4 bg-orange-50 rounded-xl border border-orange-100">
+                        <p class="font-bold text-sm mb-2 uppercase">Parameter Target:</p>
+                        <ul class="text-xs space-y-2 text-gray-700">
+                            <li class="flex justify-between border-b pb-1"><span>Laktat Clearance</span> <span class="font-bold text-orange-600">Turun > 10%</span></li>
+                            <li class="flex justify-between border-b pb-1"><span>Mean Arterial Pressure (MAP)</span> <span class="font-bold text-orange-600">&ge; 65 mmHg</span></li>
+                            <li class="flex justify-between border-b pb-1"><span>Urine Output</span> <span class="font-bold text-orange-600">&ge; 0.5 mL/kg/jam</span></li>
+                            <li class="flex justify-between border-b pb-1"><span>CRT / Mottling Score</span> <span class="font-bold text-orange-600">Normal / Membaik</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Kriteria ICU -->
+        <div id="content-icu" class="hidden space-y-4">
+            <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <h2 class="text-xl font-bold text-red-700 mb-4 uppercase tracking-tight text-center">Indikasi Transfer ke ICU</h2>
+                <div class="space-y-6">
+                    <div>
+                        <p class="text-sm font-bold text-red-600 mb-2 uppercase tracking-wide">Kriteria Mayor (Butuh 1):</p>
+                        <div class="grid grid-cols-1 gap-2">
+                            <label class="flex items-center p-3 bg-red-50 rounded-lg border border-red-100">
+                                <input type="checkbox" class="w-5 h-5 icu-check" onchange="checkICU()">
+                                <span class="ml-3 text-sm">Gagal Napas (Butuh Ventilasi Mekanik/Intubasi)</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-red-50 rounded-lg border border-red-100">
+                                <input type="checkbox" class="w-5 h-5 icu-check" onchange="checkICU()">
+                                <span class="ml-3 text-sm">Syok Septik (Butuh Vasopresor untuk MAP &ge; 65)</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-orange-600 mb-2 uppercase tracking-wide">Kriteria Minor (Butuh &ge; 3):</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <label class="flex items-center p-2 border rounded-lg text-xs"><input type="checkbox" class="icu-minor" onchange="checkICU()"><span class="ml-2">RR &ge; 30 x/m</span></label>
+                            <label class="flex items-center p-2 border rounded-lg text-xs"><input type="checkbox" class="icu-minor" onchange="checkICU()"><span class="ml-2">PaO2/FiO2 &le; 250</span></label>
+                            <label class="flex items-center p-2 border rounded-lg text-xs"><input type="checkbox" class="icu-minor" onchange="checkICU()"><span class="ml-2">Infiltrat Multilobar</span></label>
+                            <label class="flex items-center p-2 border rounded-lg text-xs"><input type="checkbox" class="icu-minor" onchange="checkICU()"><span class="ml-2">Konfusi/Disorientasi</span></label>
+                            <label class="flex items-center p-2 border rounded-lg text-xs"><input type="checkbox" class="icu-minor" onchange="checkICU()"><span class="ml-2">Uremia (BUN &ge; 20)</span></label>
+                        </div>
+                    </div>
+                </div>
+                <div id="icu-status" class="mt-8 p-4 rounded-xl text-center font-bold border-2 bg-gray-100 text-gray-500">
+                    INDIKASI ICU BELUM TERPENUHI
+                </div>
+            </section>
+        </div>
+
+        <!-- Tab: Etiologi & Kultur -->
+        <div id="content-antibiotic" class="hidden space-y-6">
+            
+            <!-- Checklist Antimikroba -->
+            <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <h3 class="text-lg font-bold text-purple-800 mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Checklist Antimikroba Pertama
+                </h3>
+                <div class="space-y-2 mb-6">
+                    <label class="flex items-center p-3 bg-purple-50 rounded-lg border border-purple-100 text-xs">
+                        <input type="checkbox" class="w-4 h-4 accent-purple-600">
+                        <span class="ml-3">Konfirmasi RIWAYAT ALERGI pasien sebelum pemberian.</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-purple-50 rounded-lg border border-purple-100 text-xs">
+                        <input type="checkbox" class="w-4 h-4 accent-purple-600">
+                        <span class="ml-3">KULTUR diambil (Target < 45 menit, jangan tunda antibiotik > 1 jam).</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-purple-50 rounded-lg border border-purple-100 text-xs">
+                        <input type="checkbox" class="w-4 h-4 accent-purple-600">
+                        <span class="ml-3">DOSIS tepat (Sesuaikan Berat Badan & Fungsi Ginjal/Kreatinin).</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-purple-50 rounded-lg border border-purple-100 text-xs">
+                        <input type="checkbox" class="w-4 h-4 accent-purple-600">
+                        <span class="ml-3">AKSES IV PATEN (Cek kelancaran aliran infus).</span>
+                    </label>
+                </div>
+
+                <h3 class="text-lg font-bold text-blue-800 mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.642.321a2 2 0 01-1.584 0l-.642-.321a6 6 0 00-3.86-.517l-2.387.477a2 2 0 00-1.022.547l-1.167 1.167a2 2 0 01-2.828 0l-.142-.142L3 17a2 2 0 00-2 2v2a2 2 0 002 2h18a2 2 0 002-2v-2a2 2 0 00-2-2l-1.572-1.572z"></path></svg>
+                    Sumber Kultur Spesimen
+                </h3>
+                <div class="grid grid-cols-2 gap-2 mb-6">
+                    <label class="flex items-center p-2 border rounded-lg text-[10px]"><input type="checkbox" class="w-3 h-3 accent-blue-600"><span class="ml-2">Kultur Darah (2 Set)</span></label>
+                    <label class="flex items-center p-2 border rounded-lg text-[10px]"><input type="checkbox" class="w-3 h-3 accent-blue-600"><span class="ml-2">Urin (Midstream/Kateter)</span></label>
+                    <label class="flex items-center p-2 border rounded-lg text-[10px]"><input type="checkbox" class="w-3 h-3 accent-blue-600"><span class="ml-2">Sputum / Aspirat Trakea</span></label>
+                    <label class="flex items-center p-2 border rounded-lg text-[10px]"><input type="checkbox" class="w-3 h-3 accent-blue-600"><span class="ml-2">Luka / Pus / Abses</span></label>
+                    <label class="flex items-center p-2 border rounded-lg text-[10px]"><input type="checkbox" class="w-3 h-3 accent-blue-600"><span class="ml-2">Cairan Serebrospinal (CSF)</span></label>
+                    <label class="flex items-center p-2 border rounded-lg text-[10px]"><input type="checkbox" class="w-3 h-3 accent-blue-600"><span class="ml-2">Tip Kateter (Jika ada)</span></label>
+                </div>
+
+                <!-- Visualisasi Sumber Infeksi -->
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <h4 class="text-sm font-bold text-gray-700 mb-4 text-center">Estimasi Distribusi Sumber Sepsis (Epidemiologi)</h4>
+                    <div class="space-y-4">
+                        <!-- Paru -->
+                        <div>
+                            <div class="flex justify-between text-[10px] mb-1"><span>Paru-paru (Pneumonia)</span> <span>35%</span></div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-blue-600 h-2.5 rounded-full" style="width: 35%"></div>
+                            </div>
+                        </div>
+                        <!-- Intra-abdomen -->
+                        <div>
+                            <div class="flex justify-between text-[10px] mb-1"><span>Intra-abdomen</span> <span>25%</span></div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-green-600 h-2.5 rounded-full" style="width: 25%"></div>
+                            </div>
+                        </div>
+                        <!-- Urinaria -->
+                        <div>
+                            <div class="flex justify-between text-[10px] mb-1"><span>Saluran Kemih (ISK)</span> <span>20%</span></div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-yellow-500 h-2.5 rounded-full" style="width: 20%"></div>
+                            </div>
+                        </div>
+                        <!-- Kulit/Jaringan Lunak -->
+                        <div>
+                            <div class="flex justify-between text-[10px] mb-1"><span>Kulit & Jaringan Lunak</span> <span>10%</span></div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-red-500 h-2.5 rounded-full" style="width: 10%"></div>
+                            </div>
+                        </div>
+                        <!-- Lain-lain -->
+                        <div>
+                            <div class="flex justify-between text-[10px] mb-1"><span>Lain-lain / Tidak Diketahui</span> <span>10%</span></div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-gray-500 h-2.5 rounded-full" style="width: 10%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-[9px] text-gray-400 mt-4 italic text-center">*Gunakan data ini sebagai panduan prioritas pencarian fokus infeksi.</p>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <!-- Footer Action -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t p-3 flex justify-around shadow-2xl md:hidden">
+        <button onclick="switchTab('calc')" class="text-[10px] font-bold text-gray-400 flex flex-col items-center"><span class="text-lg">📊</span>NEWS2</button>
+        <button onclick="switchTab('bundle')" class="text-[10px] font-bold text-gray-400 flex flex-col items-center"><span class="text-lg">⏱️</span>Bundle</button>
+        <button onclick="switchTab('icu')" class="text-[10px] font-bold text-gray-400 flex flex-col items-center"><span class="text-lg">🏥</span>ICU</button>
+        <button onclick="switchTab('antibiotic')" class="text-[10px] font-bold text-gray-400 flex flex-col items-center"><span class="text-lg">💊</span>Etiologi</button>
+    </div>
+
+    <script>
+        function switchTab(tabId) {
+            ['calc', 'bundle', 'icu', 'antibiotic'].forEach(id => {
+                const content = document.getElementById('content-' + id);
+                if (content) content.classList.add('hidden');
+                const tab = document.getElementById('tab-' + id);
+                if (tab) tab.classList.remove('tab-active', 'text-red-600');
+            });
+            
+            document.getElementById('content-' + tabId).classList.remove('hidden');
+            const activeTab = document.getElementById('tab-' + tabId);
+            if (activeTab) activeTab.classList.add('tab-active', 'text-red-600');
+        }
+
+        const spo2Options = {
+            scale1: [
+                { val: 0, label: ">= 96%", score: 0 },
+                { val: 1, label: "94 - 95%", score: 1 },
+                { val: 2, label: "92 - 93%", score: 2 },
+                { val: 3, label: "<= 91%", score: 3 }
+            ],
+            scale2: [
+                { val: 0, label: ">= 97% on air", score: 0 },
+                { val: 1, label: "95 - 96% on air", score: 1 },
+                { val: 2, label: "93 - 94% on air", score: 2 },
+                { val: 3, label: "88 - 92% (Target)", score: 0 },
+                { val: 4, label: "86 - 87%", score: 1 },
+                { val: 5, label: "84 - 85%", score: 2 },
+                { val: 6, label: "<= 83%", score: 3 }
+            ]
+        };
+
+        function updateSpO2Options() {
+            const scale = document.getElementById('news-spo2-scale').value;
+            const select = document.getElementById('news-spo2-val');
+            if (!select) return;
+            select.innerHTML = '';
+            const options = scale === '1' ? spo2Options.scale1 : spo2Options.scale2;
+            options.forEach(opt => {
+                const o = document.createElement('option');
+                o.value = opt.score;
+                o.innerText = opt.label;
+                select.appendChild(o);
+            });
+            calcNEWS2();
+        }
+
+        function calcNEWS2() {
+            // Get values only if elements exist
+            const rrElem = document.getElementById('news-rr');
+            const spo2Elem = document.getElementById('news-spo2-val');
+            const oxElem = document.getElementById('news-ox');
+            const sbpElem = document.getElementById('news-sbp');
+            const hrElem = document.getElementById('news-hr');
+            const cnsElem = document.getElementById('news-cns');
+            const tempElem = document.getElementById('news-temp');
+
+            if (!rrElem || !spo2Elem || !oxElem || !sbpElem || !hrElem || !cnsElem || !tempElem) return;
+
+            const rr = parseInt(rrElem.value);
+            const spo2 = parseInt(spo2Elem.value);
+            const ox = parseInt(oxElem.value);
+            const sbp = parseInt(sbpElem.value);
+            const hr = parseInt(hrElem.value);
+            const cns = parseInt(cnsElem.value);
+            const temp = parseInt(tempElem.value);
+            const total = rr + spo2 + ox + sbp + hr + cns + temp;
+            
+            const scoreDisplay = document.getElementById('news-score-val');
+            const riskDisplay = document.getElementById('news-risk-level');
+            const actionDisplay = document.getElementById('news-action');
+            const card = document.getElementById('news-result-card');
+            
+            if (scoreDisplay) scoreDisplay.innerText = total;
+            const isRedParam = (rr === 3 || spo2 === 3 || sbp === 3 || hr === 3 || cns === 3 || temp === 3);
+
+            if (total >= 7) {
+                if (card) card.className = "mt-6 p-6 rounded-2xl text-center border-2 bg-red-600 text-white border-red-800";
+                if (riskDisplay) riskDisplay.innerText = "RISIKO TINGGI (EMERGENCY)";
+                if (actionDisplay) actionDisplay.innerText = "AKTIFKAN SEPSIS CODE! Konsul ICU segera.";
+            } else if (total >= 5 || isRedParam) {
+                if (card) card.className = "mt-6 p-6 rounded-2xl text-center border-2 bg-orange-500 text-white border-orange-700";
+                if (riskDisplay) riskDisplay.innerText = "RISIKO SEDANG";
+                if (actionDisplay) actionDisplay.innerText = "Tinjauan mendesak Dokter Senior.";
+            } else {
+                if (card) card.className = "mt-6 p-6 rounded-2xl text-center border-2 bg-green-500 text-white border-green-700";
+                if (riskDisplay) riskDisplay.innerText = "RISIKO RENDAH";
+                if (actionDisplay) actionDisplay.innerText = "Lanjutkan observasi rutin.";
+            }
+        }
+
+        function checkICU() {
+            const majorChecks = document.querySelectorAll('.icu-check:checked').length;
+            const minorChecks = document.querySelectorAll('.icu-minor:checked').length;
+            const status = document.getElementById('icu-status');
+
+            if (majorChecks >= 1 || minorChecks >= 3) {
+                status.innerText = "INDIKASI TRANSFER ICU";
+                status.className = "mt-8 p-4 rounded-xl text-center font-bold border-2 bg-red-600 text-white border-red-800 animate-pulse";
+            } else {
+                status.innerText = "INDIKASI ICU BELUM TERPENUHI";
+                status.className = "mt-8 p-4 rounded-xl text-center font-bold border-2 bg-gray-100 text-gray-500";
+            }
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            updateSpO2Options();
+        };
+    </script>
+</body>
+</html>
